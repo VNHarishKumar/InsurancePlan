@@ -5,7 +5,6 @@ import elasticsearch from 'elasticsearch';
 import { connect } from 'amqplib/callback_api.js'; 
 import amqp from 'amqplib';
 import { readFileSync } from 'fs';
-// import { connect } from 'amqplib'; 
 import { save,deleteDocument } from './elasticservice.js';
 
 let redisClient;
@@ -48,8 +47,6 @@ async function publishMessageDelete(queueName, message) {
      const messageString = JSON.stringify(message);
     // Publish the message to the queue
     await channel.sendToQueue(queueName, Buffer.from(messageString));
-    // console.log(`Message sent: ${message}`);
-    // Close the connection
     await channel.close();
     await connection.close();
   } catch (error) {
@@ -75,15 +72,11 @@ async function consumeMessageDelete(queueName) {
         try {
           console.log("Inside elastic search delete queue");
           const messageContent = JSON.parse(message.content.toString());
-
           // deleteDocument(queueName, messageContent);
           deleteDocument('indexplan', messageContent);
-
-
         } catch (error) {
           console.error('Error occurred:', error);
         }
-
         // Acknowledge the message
         channel.ack(message);
       }
@@ -110,32 +103,23 @@ async function consumeMessage(queueName) {
     await channel.consume(queueName, (message) => {
       if (message !== null) {
         console.log(`Received message: ${message.content.toString()}`);
-        //  console.log(`Received message Raw: ${JSON.parse(message)}`);
-
         const messageContent = JSON.parse(message.content.toString());
         // Acknowledge the message
  try {
       console.log("Inside elastic search");
       console.log("message:", message);
-    
-      // const client = createElasticsearchClient();
-
       try {
-        
          save('indexplan', messageContent);
-        
   } catch (error) {
     console.error('Error occurred while storing document:', error);
     throw error;
   }   
-    // console.log('Response:', response);
   } catch (error) {
     console.error('Error occurred:', error);
   }
         channel.ack(message);
       }
     });
-
   } catch (error) {
     console.error(error);
   }
@@ -169,11 +153,7 @@ const createRedisClient = () => {
 
 // --------------------- Post Method ----------------------------------------------------
 
-function storeInRedis(data) {
-
-  // Create an Elasticsearch client instance  
-  // const elasticsearchClient = createElasticsearchClient();
-   
+function storeInRedis(data) {   
    const client =  createRedisClient();
     for (let key in data) {
         if (typeof data[key] === 'object') {
@@ -196,11 +176,7 @@ const queueName = 'myQueue';
     console.log("Inside Service POST method");
     const client = await createRedisClient();
     console.log("Redis client verififed successfully");
-    //  const redisKey = `${req.body.objectType}:${req.body.objectId}`;
      const redisKey = `${req.body.objectId}`;
-
-     //
-    // To check whether the ID is present or not
     const field = 'field';
     const idAvailable = await client.hGet(redisKey, field);
     if (idAvailable != null)
@@ -237,27 +213,18 @@ export const get = async() => {
 
   try {
     console.log("Inside Service GET method");
-
     const client = await createRedisClient();
-
     console.log("Redis client verified successfully");
-
-
     const keys = await client.keys('*'); // '*' matches all keys
-  
     const val = [];
     const field = 'field';
       // Use the keys to retrieve the corresponding values
     for (const key of keys) {
       let value = await client.hGet(key,field);
-              // let value = await client.get(key,field);
-
         const jsonObject = JSON.parse(value);
         val.push(jsonObject);
       }
-      
     return val;
-      
 } catch (error) {
     console.error('Error retrieving values from Redis:', error);
     callback(error);
@@ -269,23 +236,16 @@ export const get = async() => {
 // --------------------- GET BY ID Method Start -----------------------------------------
 
 export const get_id = async (id) => {
-  
   try {
     console.log("Inside Service GET method by ID");
-
     const client = await createRedisClient();
-
     console.log("Redis client verified successfully");
     const field = 'field';
-
     const value = await client.hGet(id,field);
-        // const value = await client.get(id,field);
     console.log(id);
     const jsonObject = JSON.parse(value);
-    console.log(jsonObject);
-  
+    console.log(jsonObject);  
       return jsonObject;
-    
   }
   catch (error)
   {
@@ -300,8 +260,6 @@ export const get_id = async (id) => {
 // --------------------- DELTE BY ID Method Start -----------------------------------------
 
 function deleteFromRedis(data) {
-        // const elasticsearchClient = createElasticsearchClient();
-
     const client = createRedisClient();
     for (let key in data) {
         if (typeof data[key] === 'object') {
@@ -322,27 +280,18 @@ function deleteFromRedis(data) {
 export const del = async (id) => {
    try {
     console.log("Inside Service DELETE method by ID");
-
     const client = await createRedisClient();
-
     console.log("Redis client verified successfully");
-
      console.log("Id", id);
      const data = await client.hGet(id, 'field');
-    //  console.log(data);
      const jsonvalue = JSON.parse(data);
-    //  console.log(jsonvalue);
      deleteFromRedis(jsonvalue);
      const value = await client.del(id);
-     
      console.log("Deleted Successfully");
-
 const queueName = 'myDeleteQueue';
     publishMessageDelete(queueName, JSON.parse(data));
     consumeMessageDelete(queueName);
-
       return value;
-    
   }
   catch (error)
   {
@@ -392,37 +341,23 @@ export const patch_id = async (req,id) => {
       const existingData = JSON.parse(value);
       const data = req.body;
       console.log("Existing Data:", existingData);
-
       const mergedData = mergeData(existingData, data);
-     
       // Convert the JavaScript object to a JSON string before storing
       const jsonString = JSON.stringify(mergedData);
        console.log("After Merge Data", mergedData);
-
-
-      //  storeInRedis(data);
-     
       console.log("ID:", id);
       const updated = await client.hSet(id, 'field', jsonString);
       // Retrieve the objectId from the request body
-    
-
       console.log("After client update");
-
     storeInRedis(data);
 
       console.log("Value updated in Redis successfully");
       
         try {
       console.log("Inside elastic search");
-          // const response = await storeDocument(redisKey, jsonString);
-    
           const newData = await client.hGet(id, field);
-    
     publishMessage(queueName, JSON.parse(newData));
     consumeMessage(queueName);
-
-
   } catch (error) {
     console.error('Error occurred:', error);
   }
