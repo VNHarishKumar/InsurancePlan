@@ -1,0 +1,29 @@
+{
+  "name": "assignment_1",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.13.0",
+    "ajv": "^8.12.0",
+    "amqplib": "^0.10.3",
+    "cors": "^2.8.5",
+    "debug": "^4.3.4",
+    "elasticsearch": "^16.7.3",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "google-auth-library": "^9.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.1.1",
+    "redis": "^4.6.12",
+    "redis-server": "^1.2.2",
+    "urlencode": "^2.0.0",
+    "uuid": "^9.0.1"
+  }
+}
