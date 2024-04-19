@@ -15,11 +15,6 @@ export const middleware = async (req, res, next) => {
     });
 
     const payload = ticket.getPayload();
-    // const userid = payload['sub'];
-
-    // If request specified a G Suite domain:
-    // const domain = payload['hd'];
-
     next();
   } catch (error) {
     console.error(error);
