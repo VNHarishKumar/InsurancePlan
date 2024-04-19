@@ -293,8 +293,4 @@ export const ifmatch = async (request, response) => {
   response.json({error: "ETag does not match"});
 }
 
-// export const idAlreadyPresent = async (info, response) => {
-//     response.set('Cache-Control', 'no-cache');
-//     response.status(409);
-//   response.json({ info });
-// }
+
